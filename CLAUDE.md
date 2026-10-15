@@ -4,6 +4,8 @@
 made for the Telugu dub) and Jana Aranya (1976, Bengali, 4% faster PAL copy + missing opening, subtitles routed via
 Portuguese). Both installed in ~/Movies/YouTube Films (old versions kept as .en.srt.v1.bak). Neutral judge (clean-voice
 speech): Nayakan 52% of lines start on speech / 70% coverage (v1 alass 25%/46%); Jana Aranya 64% / 76% (raw download 26%/46%).
+Held-out check (fresh Whisper on clean voice, used by neither version): Nayakan v2 616 lines matched vs v1 456, same
+precision (70% within 2 s), and the 50-70 min stretch fixed (v1: 4 lines each, -6.9/+3.0 s; v2: 52 and 42 lines, ~0 s).
 Next: run more films to harden; push to GitHub (user OK needed).
 
 ## Roadmap
