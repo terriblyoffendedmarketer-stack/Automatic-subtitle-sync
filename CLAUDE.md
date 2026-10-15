@@ -52,3 +52,14 @@ Next: run more films to harden. (Pushed: the global post-commit hook ~/.git-hook
 - YouTube [Music] tags mistake dialogue-under-music for songs → never drop lines on that signal.
 - Demucs whole-film = out of memory on 16 GB → 10-min chunks (~1 min per chunk on M2).
 - Fast path (YouTube only) fine timing was worse than v1-Whisper; heavy (clean voice + merged refs) won on both films.
+
+## Nayakan scene order (investigated 2026-10-15)
+YouTube copy (Ayngaran International, official Tamil distributor, 2:25:13) vs the subtitle file (WEBRIP, made for the
+Telugu dub): two blocks swapped. Subtitle order A-B-C-D, YouTube A-C-B-D:
+- B (~10 min, sub 55:10-65:40): dons' welcome party, smugglers' meeting, Velu's ship job, Reddy orders Velu's family killed.
+  In YouTube at 65:36-71:32.
+- C (~8.5 min, sub 66:14-74:40): woman begs Nayakar to save her sick daughter, ambulance argument, aftermath.
+  In YouTube at 56:42-65:24.
+YouTube order puts Reddy's kill order right before the family scene + attack. Which order is the original theatrical cut
+is unconfirmed: needs a second independent source (e.g. the Tamil DVDRip subtitle on OpenSubtitles, id 1952136173).
+Subtitles already follow the YouTube copy (v2 blocks), so viewing is correct either way.
