@@ -6,14 +6,15 @@ Portuguese). Both installed in ~/Movies/YouTube Films (old versions kept as .en.
 speech): Nayakan 52% of lines start on speech / 70% coverage (v1 alass 25%/46%); Jana Aranya 64% / 76% (raw download 26%/46%).
 Held-out check (fresh Whisper on clean voice, used by neither version): Nayakan v2 616 lines matched vs v1 456, same
 precision (70% within 2 s), and the 50-70 min stretch fixed (v1: 4 lines each, -6.9/+3.0 s; v2: 52 and 42 lines, ~0 s).
-Next: run more films to harden; push to GitHub (user OK needed).
+Next: run more films to harden. (Pushed: the global post-commit hook ~/.git-hooks/post-commit auto-pushes every commit.)
 
 ## Roadmap
 - [x] 1. v1: alass wrapper (`sync_subs.py`)
 - [x] 2. v2 pipeline: isolate → speech → hear → align (blocks) → fine → style → names → polish
 - [x] 3. Verified on Nayakan + Jana Aranya (neutral judge + independent Whisper text check + spot checks)
 - [x] 4. One-command runner (`subsync.py`, fast + heavy) + README with problem tiers
-- [ ] 5. Push to GitHub (user OK); more test films
+- [x] 5. On GitHub (auto-pushed on commit)
+- [ ] 6. More test films
 
 ## Pipeline (run in order; <work> = work/<Film>)
 | Step | Script | What it does |
