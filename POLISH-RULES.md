@@ -26,3 +26,8 @@ Used when rewriting synced subtitle lines (polish.py export → edit → apply).
 ## Leave alone
 - Song lyrics (♪ or italic): don't invent or rewrite lyrics beyond fixing obvious errors.
 - Lines that are already good: keep them exactly. Polish is for jank, not for rewriting everything.
+
+## Names must match the audio
+- Subtitle files are sometimes made for a DUB (Nayakan's came from the Telugu dub). If the names differ from what's
+  heard, use the names in the audio: build a names map (subtitle name → heard name) from evidence (Whisper / YouTube
+  captions counts + context) and apply it with `polish.py names`. Uncertain names: decide line by line from what's heard.

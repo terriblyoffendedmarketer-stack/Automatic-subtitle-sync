@@ -12,7 +12,9 @@
 #
 # Usage:
 #   .venv/bin/python subsync.py <video> <subs.srt> --yt <youtube-url> --lang <ta|bn|hi|..> [--out <out.srt>]
-#   .venv/bin/python subsync.py <video> <subs.srt> --heavy --lang <..>          (no YouTube captions / low confidence)
+#   .venv/bin/python subsync.py <video> <subs.srt> --heavy --lang <..> [--yt <url>] [--names map.json]
+#       heavy = Demucs voices + Silero timing + Whisper on voices (merged with YouTube captions if --yt). Use for hard
+#       films (songs, reordered/cut scenes): it beat the fast path on both test films. ~1 min per 10 min of film each step.
 # Requires: project .venv; yt-dlp (+ Chrome login for the bot check); --heavy also needs ~/.dictation venv (Whisper).
 # Time: fast path ~1–2 min per film. Heavy path ~15 min (voices) + ~15 min (Whisper) for a 2.5 h film.
 import argparse, json, os, re, statistics, subprocess, sys
@@ -72,6 +74,7 @@ def main():
     ap.add_argument("video"); ap.add_argument("subs")
     ap.add_argument("--yt"); ap.add_argument("--lang", required=True)
     ap.add_argument("--heavy", action="store_true"); ap.add_argument("--out")
+    ap.add_argument("--names", help="JSON map {subtitle name: name heard in audio}, for subtitles made for a dub")
     a = ap.parse_args()
     name = os.path.splitext(os.path.basename(a.video))[0]
     work = os.path.join(HERE, "work", ("heavy-" if a.heavy else "yt-") + name)
@@ -80,9 +83,19 @@ def main():
 
     # 1. reference: what is said, when (+ songs)
     if a.heavy:
+        # best result on Nayakan/Jana Aranya: clean-voice speech timeline (Demucs + Silero) for timing, and
+        # Whisper-on-voices MERGED with YouTube captions as the meaning reference (each fills the other's gaps)
         sh([PY, os.path.join(HERE, "isolate.py"), a.video, work])
         sh([PY, os.path.join(HERE, "speech.py"), work])
         sh([WHISPER_PY, "-I", os.path.join(HERE, "hear.py"), work, a.lang])
+        if a.yt:
+            yw = os.path.join(work, "yt"); os.makedirs(yw, exist_ok=True)
+            if not any(f.endswith("-orig.json3") for f in os.listdir(yw)):
+                sh([PY, os.path.join(HERE, "autocap.py"), "fetch", a.yt, a.lang, yw])
+            sh([PY, os.path.join(HERE, "autocap.py"), "build", yw])
+            ref = json.load(open(os.path.join(work, "whisper.json"))) + json.load(open(os.path.join(yw, "whisper.json")))
+            ref.sort(key=lambda r: r["start"])
+            json.dump(ref, open(os.path.join(work, "whisper.json"), "w"))
     else:
         if not a.yt:
             sys.exit("give --yt <url> (fast path) or --heavy")
@@ -114,6 +127,9 @@ def main():
         write([[f(s), f(e), t] for s, e, t in src], stage)
     else:
         stage = aligned
+    if a.names:   # subtitles made for a dub: rename characters to what the audio says (see POLISH-RULES.md)
+        named = os.path.join(work, "named.srt")
+        sh(["python3", "-I", os.path.join(HERE, "polish.py"), "names", stage, a.names, named]); stage = named
     fine = os.path.join(work, "fine.srt")
     print(sh(["python3", "-I", os.path.join(HERE, "fine.py"), stage, os.path.join(work, "speech.json"), fine]).strip())
     print(sh(["python3", "-I", os.path.join(HERE, "style.py"), fine, out]).strip())

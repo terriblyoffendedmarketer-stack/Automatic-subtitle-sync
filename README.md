@@ -23,8 +23,12 @@ screen. Every word shown comes from the real subtitle file.
 
 ## Use
 ```bash
+# everyday: subtitles a bit off (offset, drift, minor cuts), about a minute
 .venv/bin/python subsync.py "<film>.mp4" "<subs>.srt" --yt "<youtube-url>" --lang ta
+# hard films (songs, reordered/cut scenes, dub subtitles): ~30-40 min, measurably better
+.venv/bin/python subsync.py "<film>.mp4" "<subs>.srt" --heavy --yt "<youtube-url>" --lang ta --names names.json
 ```
+Then optionally the wording polish: `polish.py export` → Claude edits batches per POLISH-RULES.md → `polish.py apply` → `style.py`.
 Writes `<film>.en.srt` next to the film and `work/yt-<film>/subsync_report.json`: tier, blocks, dropped lines (with
 text), weak 10-minute stretches, whether polish is recommended.
 

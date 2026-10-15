@@ -6,10 +6,12 @@
 # Usage:
 #   python3 polish.py export <synced.srt> <workdir> <batchdir>
 #   python3 polish.py apply  <synced.srt> <batchdir> <out.srt>
+#   python3 polish.py names  <synced.srt> <names.json> <out.srt>   (dub character names → names heard in the audio)
 # Requires: nothing (stdlib); <workdir>/whisper.json from hear.py.
 #
 # Gotchas:
 #   - Edited batch files are named <batch>.done.tsv; lines missing from them keep their current text.
+#   - Edits are applied by ORIGINAL TEXT, so they survive re-running the alignment (export from aligned.srt).
 #   - Timing is never changed here; run style.py afterwards to re-check line length and reading speed.
 import json, os, re, sys
 
@@ -36,7 +38,7 @@ def export(srt, work, bdir, size=120):
         rows = ["id\ttime\tsecs\tcps\ttext\twhisper_heard"]
         for k in range(b, min(b + size, len(cues))):
             a, e, t = cues[k]
-            heard = " | ".join(w["text"] for w in W if w["end"] > a - 1 and w["start"] < e + 1)
+            heard = " | ".join(w["text"] for w in W if w["end"] > a - 1 and w["start"] < e + 1)[:140]
             flat = t.replace("\n", " / ")
             cps = len(t.replace("\n", "")) / max(e - a, 0.01)
             rows.append(f"{k}\t{fmt(a)[:8]}\t{e-a:.1f}\t{cps:.0f}\t{flat}\t{heard}")
@@ -44,15 +46,28 @@ def export(srt, work, bdir, size=120):
     print(f"exported {len(cues)} lines in {(len(cues)+size-1)//size} batches to {bdir}")
 
 
-def apply(srt, bdir, out):
-    cues = parse(srt)
-    new = {}
+def load_map(bdir):
+    """original text -> polished text, from each batch + its .done edits (survives re-alignment: keyed by text)"""
+    m = {}
     for f in sorted(os.listdir(bdir)):
         if f.endswith(".done.tsv"):
+            orig = {}
+            for line in open(os.path.join(bdir, f.replace(".done.tsv", ".tsv")), encoding="utf-8"):
+                p = line.rstrip("\n").split("\t")
+                if p[0].isdigit():
+                    orig[int(p[0])] = p[4].replace(" / ", "\n")
             for line in open(os.path.join(bdir, f), encoding="utf-8"):
                 if "\t" in line and line.split("\t", 1)[0].strip().isdigit():
                     k, t = line.rstrip("\n").split("\t", 1)
-                    new[int(k)] = t.strip().replace(" / ", "\n")
+                    if int(k) in orig:
+                        m[" ".join(orig[int(k)].split())] = t.strip().replace(" / ", "\n")
+    return m
+
+
+def apply(srt, bdir, out):
+    cues = parse(srt)
+    tm = load_map(bdir)
+    new = {n: tm[" ".join(t.split())] for n, (_, _, t) in enumerate(cues) if " ".join(t.split()) in tm}
     with open(out, "w", encoding="utf-8") as fo:
         for n, (a, e, t) in enumerate(cues):
             fo.write(f"{n+1}\n{fmt(a)} --> {fmt(e)}\n{new.get(n, t)}\n\n")
@@ -60,5 +75,19 @@ def apply(srt, bdir, out):
     print(f"{out}: {changed} lines reworded of {len(cues)}")
 
 
+def names(srt, mapfile, out):
+    """Subtitles made for a DUB use the dub's character names (Nayakan's file came from the Telugu dub: Veeraiah,
+    Naidu, Chettiar) while the audio says Velu, Nayakar, Reddy. Replace whole words per a JSON map {dub: heard}."""
+    mp = json.load(open(mapfile, encoding="utf-8"))
+    cues = parse(srt); n = 0
+    with open(out, "w", encoding="utf-8") as fo:
+        for k, (a, e, t) in enumerate(cues):
+            for src, dst in sorted(mp.items(), key=lambda kv: -len(kv[0])):
+                t, c = re.subn(rf"\b{re.escape(src)}\b", dst, t); n += c
+            fo.write(f"{k+1}\n{fmt(a)} --> {fmt(e)}\n{t}\n\n")
+    print(f"{out}: {n} name replacements")
+
+
 if __name__ == "__main__":
-    {"export": lambda: export(*sys.argv[2:5]), "apply": lambda: apply(*sys.argv[2:5])}[sys.argv[1]]()
+    {"export": lambda: export(*sys.argv[2:5]), "apply": lambda: apply(*sys.argv[2:5]),
+     "names": lambda: names(*sys.argv[2:5])}[sys.argv[1]]()
