@@ -67,3 +67,7 @@ Exact YouTube boundaries (scene cuts): A 0-56:27.88 | C 56:27.88-65:21.72 | B 65
 ~71:37.80-71:45.68 | D 71:45.68-end. Tamil DVDRip subtitle (OpenSubtitles 1952136173) has B (58-66 min) before C (67-70 min),
 agreeing with the Telugu-dub file. But the official copy puts the intermission right after B's kill-order cliffhanger, so the
 YouTube order may be deliberate. Lossless re-cut possible at A/C and B/D (keyframes); C/B cut is 0.2 s before a keyframe.
+Jana Aranya v3 (installed 2026-10-15): refine_lines.py with the clean-voice Whisper added as a reference (clean matches win
+ties, lines move as a group) + 4 manual ending fixes from speech onsets. Taxi exchange (120:41-120:52) had been 3-5 s early
+(old mixed-audio ref was ~4 s off there and snapping chose the wrong utterance). Within 1 s of speech 48% -> 58%;
+last 10 min -4.2 s -> 0.0 s. Backups: .en.srt.v1.bak (first sync), .en.srt.v2.bak (pre-v3).

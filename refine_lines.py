@@ -11,7 +11,8 @@
 #
 # Gotchas:
 #   - Short lines ("I know.", "Fine.") match anything by meaning: they need a near-exact text match instead.
-#   - A move is skipped if it would jump past a neighbouring line (keeps order, no overlaps).
+#   - Targets for all lines are found first, then applied together keeping order (one-at-a-time moves blocked
+#     each other). Clean-voice Whisper matches (src=clean) win ties over mixed-audio/YouTube references.
 #   - Keep the judge independent: don't feed the held-out Whisper pass into this step.
 import json, os, re, sys, bisect
 import numpy as np
@@ -45,31 +46,39 @@ def main():
     ec = model.encode([norm(c[2]) for c in cues], normalize_embeddings=True, batch_size=128)
     ew = model.encode([norm(w["text"]) for w in W], normalize_embeddings=True, batch_size=128)
     ws = [w["start"] for w in W]
-    moved = 0
+    targets = {}
     for k, (a, e, t) in enumerate(cues):
         lo, hi = bisect.bisect_left(ws, a - WIN), bisect.bisect_right(ws, a + WIN)
         nt = norm(t); short = len(nt) < 12
         best = None
         for i in range(lo, hi):
+            wt = norm(W[i]["text"])
             if short:
-                s = 1.0 if nt and (nt == norm(W[i]["text"]) or norm(W[i]["text"]).startswith(nt)) else 0.0
+                s = 1.0 if nt and (nt == wt or wt.startswith(nt) or wt.endswith(nt)) else 0.0
             else:
                 s = float(ec[k] @ ew[i])
-            if s >= SIM and (best is None or s > best[0] or (s == best[0] and abs(ws[i] - a) < abs(best[1] - a))):
+            if s < SIM:
+                continue
+            s += 0.1 if W[i].get("src") == "clean" else 0.0   # clean-voice Whisper timing beats mixed-audio refs
+            if best is None or s > best[0] + 1e-6 or (abs(s - best[0]) <= 1e-6 and abs(ws[i] - a) < abs(best[1] - a)):
                 best = (s, ws[i])
         if not best or abs(best[1] - a) < 0.4:
             continue
         na = best[1]
         j = bisect.bisect_left(on, na - SNAP)
         near = [o for o in on[j:j + 4] if abs(o - na) <= SNAP]
-        if near:
-            na = min(near, key=lambda o: abs(o - na))
-        prev_end = cues[k - 1][1] if k else -1
-        next_start = cues[k + 1][0] if k + 1 < len(cues) else 1e9
-        dur = e - a
-        if na <= prev_end - 0.3 or na + min(dur, 1.0) >= next_start + 0.3:
-            continue   # would jump past a neighbour
-        cues[k] = [na, na + dur, t]; moved += 1
+        targets[k] = min(near, key=lambda o: abs(o - na)) if near else na
+    # apply all targets together, keeping order: a line moves only if it stays after the previous (final) line
+    # and before the next line's target (or its current place if it isn't moving). Lines move as a group
+    # (Jana Aranya's taxi exchange: four lines all 3-5 s early blocked each other when moved one at a time).
+    moved, prev_end = 0, -1.0
+    for k, (a, e, t) in enumerate(cues):
+        if k in targets:
+            na, dur = targets[k], e - a
+            nxt = targets.get(k + 1, cues[k + 1][0] if k + 1 < len(cues) else 1e9)
+            if na > prev_end - 0.3 and na + min(dur, 1.0) < nxt + 0.3:
+                cues[k] = [na, na + dur, t]; moved += 1
+        prev_end = cues[k][1]
     cues.sort()
     for k in range(len(cues) - 1):     # no overlaps after moves
         if cues[k][1] > cues[k + 1][0] - 0.084:
