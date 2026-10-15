@@ -63,3 +63,7 @@ Telugu dub): two blocks swapped. Subtitle order A-B-C-D, YouTube A-C-B-D:
 YouTube order puts Reddy's kill order right before the family scene + attack. Which order is the original theatrical cut
 is unconfirmed: needs a second independent source (e.g. the Tamil DVDRip subtitle on OpenSubtitles, id 1952136173).
 Subtitles already follow the YouTube copy (v2 blocks), so viewing is correct either way.
+Exact YouTube boundaries (scene cuts): A 0-56:27.88 | C 56:27.88-65:21.72 | B 65:21.72-~71:37.80 | Tamil INTERMISSION card
+~71:37.80-71:45.68 | D 71:45.68-end. Tamil DVDRip subtitle (OpenSubtitles 1952136173) has B (58-66 min) before C (67-70 min),
+agreeing with the Telugu-dub file. But the official copy puts the intermission right after B's kill-order cliffhanger, so the
+YouTube order may be deliberate. Lossless re-cut possible at A/C and B/D (keyframes); C/B cut is 0.2 s before a keyframe.
