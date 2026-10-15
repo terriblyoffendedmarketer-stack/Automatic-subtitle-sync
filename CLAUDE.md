@@ -36,6 +36,8 @@ Next: run more films to harden. (Pushed: the global post-commit hook ~/.git-hook
 - `subsync.py`: one command (diagnose → cheapest fix → fine → style); `--heavy` for hard films, `--names` for dubs
 - `autocap.py`, `fine.py`, `judge.py`: fast reference, fine timing, neutral judge
 - `README.md`: problem → fix tiers, usage, lessons
+- `refine_lines.py`: line-by-line exact timing (group moves, clean-voice refs win); part of the runner
+- `skill/SKILL.md`: copy of the Claude skill (~/.claude/skills/subtitle-sync/SKILL.md): the end-to-end workflow
 - `work/`: per-film intermediates (gitignored)
 
 ## Setup

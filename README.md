@@ -34,6 +34,10 @@ text), weak 10-minute stretches, whether polish is recommended.
 
 Check a result against a neutral speech timeline: `python3 judge.py work/<film>/speech.json <subs.srt> ...`
 
+## Claude skill
+`skill/SKILL.md` (installed at `~/.claude/skills/subtitle-sync/`) walks any Claude session through the full workflow:
+get subtitles → sync tier → verify → polish → install.
+
 ## Lessons built in (see each script's Gotchas)
 - alass (v1) assumes scenes stay in order and can't drop lines: it crammed dialogue into songs and was 37 s off.
 - One global in-order matching also failed: Nayakan's YouTube copy plays two scenes in the opposite order.

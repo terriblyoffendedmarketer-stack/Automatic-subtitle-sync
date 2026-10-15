@@ -7,7 +7,8 @@
 #   T2  drift (frame-rate mismatch)→ linear stretch
 #   T3  different cut              → piecewise placement; lines for missing scenes dropped; kept out of songs
 #   T4  low confidence             → recommends the heavy reference (--heavy: Demucs voices + Whisper, ~1 min per 10 min)
-# Always after: fine timing pass (±3 s block nudges onto speech) + style rules (42×2, ≤20 cps, 5/6–7 s, 2-frame gaps).
+# Always after: fine timing (±3 s block nudges) → line-by-line exact timing (refine_lines.py) → style rules
+# (42×2, ≤20 cps, 5/6–7 s, 2-frame gaps).
 # Wording polish (POLISH-RULES.md) is a separate, optional step: the report says whether it's recommended.
 #
 # Usage:
@@ -93,7 +94,10 @@ def main():
             if not any(f.endswith("-orig.json3") for f in os.listdir(yw)):
                 sh([PY, os.path.join(HERE, "autocap.py"), "fetch", a.yt, a.lang, yw])
             sh([PY, os.path.join(HERE, "autocap.py"), "build", yw])
-            ref = json.load(open(os.path.join(work, "whisper.json"))) + json.load(open(os.path.join(yw, "whisper.json")))
+            clean = json.load(open(os.path.join(work, "whisper.json")))
+            for w in clean:
+                w["src"] = "clean"          # refine_lines.py trusts clean-voice timing over YouTube's when they disagree
+            ref = clean + json.load(open(os.path.join(yw, "whisper.json")))
             ref.sort(key=lambda r: r["start"])
             json.dump(ref, open(os.path.join(work, "whisper.json"), "w"))
     else:
@@ -132,7 +136,10 @@ def main():
         sh(["python3", "-I", os.path.join(HERE, "polish.py"), "names", stage, a.names, named]); stage = named
     fine = os.path.join(work, "fine.srt")
     print(sh(["python3", "-I", os.path.join(HERE, "fine.py"), stage, os.path.join(work, "speech.json"), fine]).strip())
-    print(sh(["python3", "-I", os.path.join(HERE, "style.py"), fine, out]).strip())
+    # line by line: every line with a clear match moves onto the exact moment it's said (fixed Jana Aranya's ending)
+    exact = os.path.join(work, "exact.srt")
+    print(sh([PY, "-I", os.path.join(HERE, "refine_lines.py"), fine, work, exact]).strip().splitlines()[-1])
+    print(sh(["python3", "-I", os.path.join(HERE, "style.py"), exact, out]).strip())
 
     q = quality_scan(src)
     report = {
